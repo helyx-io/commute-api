@@ -1,0 +1,11 @@
+language: go
+go:
+    - tip
+before_install:
+    - go get github.com/axw/gocov/gocov
+    - go get github.com/mattn/goveralls
+    - go get code.google.com/p/go.tools/cmd/cover
+
+script:
+    - gocov test github.com/helyx-io/gtfs-api/utils | gocov report
+    - goveralls -package="github.com/helyx-io/gtfs-api/utils"

@@ -489,8 +489,10 @@ func fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopT
 
     stfs := make([]StopTimeFull, 0)
 
+    currentTime := time.Now().Format("15:04:05")
+
     for stf := range stfChan {
-        if (len(stfs) < 5) {
+        if len(stfs) < 5 && stf.DepartureTime >= currentTime {
             stfs = append(stfs, stf)
         }
     }

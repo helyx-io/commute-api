@@ -42,12 +42,12 @@ func InitDB(dbInfos *config.DBConnectInfos) (*gorm.DB, error) {
 
 func Rows(db *gorm.DB, connectInfos *config.DBConnectInfos, filename string, params ...interface{}) (*sql.Rows, error) {
     filePath := fmt.Sprintf("resources/ddl/%s/%s.sql", connectInfos.Dialect, filename)
-    log.Printf("Executing query query from file path: '%s'", filePath)
+    log.Printf("Executing query query from file path: '%s' - Params: %v", filePath, params)
 
     dml, err := data.Asset(filePath)
     utils.FailOnError(err, fmt.Sprintf("Could get dml resource at path '%s' for exec", filePath))
     execStmt := fmt.Sprintf(string(dml), params...)
-    log.Printf("Exec Stmt: '%s' - Params: %v", execStmt, params)
+//    log.Printf("Exec Stmt: '%s' - Params: %v", execStmt, params)
 
     return db.Raw(execStmt).Rows()
 }

@@ -17,14 +17,28 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+    "github.com/jinzhu/gorm"
+    "gopkg.in/redis.v2"
+    "github.com/helyx-io/gtfs-api/database"
 )
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+/// Variables
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+var (
+    DB              *gorm.DB
+    RedisClient     *redis.Client
+)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Main Function
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 func main() {
+    defer Close()
 
 	// Init Runtime
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -33,18 +47,27 @@ func main() {
 	//	defer profile.Start(profile.MemProfile).Stop()
 	//	defer profile.Start(profile.CPUProfile).Stop()
 
-	// Init Logger
-	logWriter, err := os.Create("/var/log/gtfs-api/access.log")
-	utils.FailOnError(err, fmt.Sprintf("Could not access log"))
-	defer logWriter.Close()
+    // Init Config
+    config := config.Init();
 
-	// Init Config
-	err = config.Init();
-	utils.FailOnError(err, fmt.Sprintf("Could not init Configuration"))
-	defer config.Close()
+    // Init Logger
+    logWriter, err := os.Create(config.LoggerInfos.Path)
+    utils.FailOnError(err, fmt.Sprintf("Could not access log"))
+    defer logWriter.Close()
+
+
+    DB, err = database.InitDB(config.ConnectInfos)
+    utils.FailOnError(err, fmt.Sprintf("Could not init Database"))
+
+    RedisClient = redis.NewTCPClient(&redis.Options{
+        Addr: fmt.Sprintf("%s:%d", config.RedisInfos.Host, config.RedisInfos.Port),
+        Password: "", // no password set
+        DB:       0,  // use default DB
+        PoolSize: 16,
+    })
 
 	// Init Router
-	router := initRouter()
+	router := initRouter(DB, config.ConnectInfos, RedisClient)
 	http.Handle("/", router)
 
 	handlerChain := alice.New(
@@ -54,7 +77,6 @@ func main() {
 	).Then(router)
 
 	// Init HTTP Server
-
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", config.Http.Port),
 		Handler: handlerChain,
@@ -66,17 +88,22 @@ func main() {
     utils.FailOnError(err, fmt.Sprintf("Could not listen and server"))
 }
 
+func Close() {
+    if DB != nil {
+        defer DB.Close()
+    }
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Router Configuration
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-func initRouter() *mux.Router {
+func initRouter(db *gorm.DB, connectConfig *config.DBConnectInfos, redis *redis.Client) *mux.Router {
 	r := mux.NewRouter()
 
 	new(controller.IndexController).Init(r.PathPrefix("/").Subrouter())
-	new(controller.AgencyController).Init(r.PathPrefix("/api/agencies").Subrouter())
+	new(controller.AgencyController).Init(db, connectConfig, redis, r.PathPrefix("/api/agencies").Subrouter())
 
 	return r
 }

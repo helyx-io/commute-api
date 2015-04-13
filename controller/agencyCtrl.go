@@ -5,7 +5,6 @@ package controller
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 import (
-    "fmt"
 	"log"
     "net/http"
     "encoding/json"
@@ -13,6 +12,9 @@ import (
     "github.com/fatih/stopwatch"
     "github.com/helyx-io/gtfs-api/config"
     "github.com/helyx-io/gtfs-api/utils"
+    "github.com/jinzhu/gorm"
+    "gopkg.in/redis.v2"
+    "github.com/helyx-io/gtfs-api/database"
 )
 
 
@@ -54,13 +56,21 @@ type JsonAgency struct {
 /// Agency Controller
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-type AgencyController struct { }
+type AgencyController struct {
+    db *gorm.DB
+    redis *redis.Client
+    connectInfos *config.DBConnectInfos
+}
 
-func (ac *AgencyController) Init(r *mux.Router) {
+func (ac *AgencyController) Init(db *gorm.DB, connectInfos *config.DBConnectInfos, redis *redis.Client, r *mux.Router) {
     // Init Router
     r.HandleFunc("/nearest", ac.NearestAgencies)
 
-    new(StopController).Init(r.PathPrefix("/{agencyKey}/stops").Subrouter())
+    ac.db = db
+    ac.connectInfos = connectInfos
+    ac.redis = redis
+
+    new(StopController).Init(db, connectInfos, redis, r.PathPrefix("/{agencyKey}/stops").Subrouter())
 }
 
 func (ac *AgencyController) NearestAgencies(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +91,7 @@ func (ac *AgencyController) NearestAgencies(w http.ResponseWriter, r *http.Reque
 
     w.Header().Set("X-Response-Time", sw.ElapsedTime().String())
 
-    agencies := fetchNearestAgencies(lat, lon)
+    agencies := ac.fetchNearestAgencies(lat, lon)
 
     jsm, err := json.Marshal(agencies.toJsonAgencies())
 
@@ -104,13 +114,11 @@ func (a Agency) toJsonAgency() JsonAgency {
 }
 
 
-func fetchNearestAgencies(lat, lon string) Agencies {
+func (ac *AgencyController) fetchNearestAgencies(lat, lon string) Agencies {
 
-    query := fmt.Sprintf("select agency_key, agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_min_lat, agency_max_lat, agency_min_lon, agency_max_lon from agencies where agency_min_lat <= %s and agency_max_lat >= %s and agency_min_lon <= %s and agency_max_lon >= %s", lat, lat, lon, lon)
     sw := stopwatch.Start(0)
 
-    log.Printf("Query: %s", query)
-    rows, err := config.DB.Raw(query).Rows()
+    rows, err := database.Rows(ac.db, ac.connectInfos, "select-nearest-stations", lat, lat, lon, lon)
     defer rows.Close()
 
     log.Printf("[STOP_SERVICE][FIND_NEAREST_AGENCIES] Data Fetch for [lat=%s, lon=%s] Done in %v", lat, lon, sw.ElapsedTime());

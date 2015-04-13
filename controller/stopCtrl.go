@@ -17,6 +17,8 @@ import (
     "github.com/fatih/stopwatch"
     "github.com/helyx-io/gtfs-api/config"
     "github.com/helyx-io/gtfs-api/utils"
+    "github.com/jinzhu/gorm"
+    "github.com/helyx-io/gtfs-api/database"
 )
 
 
@@ -144,15 +146,17 @@ var (
 /// Agency Controller
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-type StopController struct { }
+type StopController struct {
+    db *gorm.DB
+    redis *redis.Client
+    connectInfos *config.DBConnectInfos
+}
 
-func (sc *StopController) Init(r *mux.Router) {
-    redisClient = redis.NewTCPClient(&redis.Options{
-        Addr: fmt.Sprintf("%s:%d", config.RedisInfos.Host, config.RedisInfos.Port),
-        Password: "", // no password set
-        DB:       0,  // use default DB
-        PoolSize: 16,
-    })
+func (sc *StopController) Init(db *gorm.DB, connectInfos *config.DBConnectInfos, redis *redis.Client, r *mux.Router) {
+
+    sc.db = db
+    sc.connectInfos = connectInfos
+    sc.redis = redis
 
     // Init Router
     r.HandleFunc("/{date}/nearest", sc.NearestStops)
@@ -186,16 +190,16 @@ func (sc *StopController) NearestStops(w http.ResponseWriter, r *http.Request) {
 
 
     log.Printf("Fetching stops by date ...")
-    stops := fetchStopsByDate(agencyKey, date, lat, lon, distance)
+    stops := sc.fetchStopsByDate(agencyKey, date, lat, lon, distance)
 
     log.Printf("Extracting Trip Ids ...")
-    tripIds := extractTripIds(stops)
+    tripIds := sc.extractTripIds(stops)
 
     log.Printf("Fetching First And Last StopNames By Trip Ids ...")
-    flStopNamesByTripId := fetchFirstAndLastStopNamesByTripIds(agencyKey, tripIds)
+    flStopNamesByTripId := sc.fetchFirstAndLastStopNamesByTripIds(agencyKey, tripIds)
 
     log.Printf("Merge First and Last StopNames By TripId With Stop Routes ...")
-    mergeFlStopNamesByTripIdWithStopRoutes(&stops, flStopNamesByTripId)
+    sc.mergeFlStopNamesByTripIdWithStopRoutes(&stops, flStopNamesByTripId)
 
     log.Printf("-----------------------------------------------------------------------------------")
     log.Printf("--- Nearest stops. ElapsedTime: %v", sw.ElapsedTime())
@@ -284,7 +288,7 @@ func (r *Route) toJsonRoute() JsonRoute {
     return JsonRoute{r.Name, r.TripId, r.RouteType, r.RouteColor, r.RouteTextColor, r.FirstStopName, r.LastStopName, jstfs}
 }
 
-func mergeFlStopNamesByTripIdWithStopRoutes(stops *Stops, flStopNamesByTripId map[int]FirstLastStopNamesByTripId) {
+func (sc *StopController) mergeFlStopNamesByTripIdWithStopRoutes(stops *Stops, flStopNamesByTripId map[int]FirstLastStopNamesByTripId) {
     for i := range *stops {
         stop := &(*stops)[i]
         for j := range stop.Routes {
@@ -296,7 +300,7 @@ func mergeFlStopNamesByTripIdWithStopRoutes(stops *Stops, flStopNamesByTripId ma
 
 }
 
-func fetchFirstAndLastStopNamesByTripIds(agencyKey string, tripIds []int) map[int]FirstLastStopNamesByTripId {
+func (sc *StopController) fetchFirstAndLastStopNamesByTripIds(agencyKey string, tripIds []int) map[int]FirstLastStopNamesByTripId {
 
     flStopNamesByTripIdChan := make(chan FirstLastStopNamesByTripId)
 
@@ -346,7 +350,7 @@ func fetchFirstAndLastStopNamesByTripIds(agencyKey string, tripIds []int) map[in
     return flStopNamesByTripIds
 }
 
-func extractTripIds(stops Stops) []int {
+func (sc *StopController) extractTripIds(stops Stops) []int {
     tripIdMap := make(map[int]bool)
 
     for _, stop := range stops {
@@ -365,13 +369,12 @@ func extractTripIds(stops Stops) []int {
     return tripIds
 }
 
-func fetchStopsByDate(agencyKey, date, lat, lon, distance string) Stops {
+func (sc *StopController) fetchStopsByDate(agencyKey, date, lat, lon, distance string) Stops {
 
-    query := fmt.Sprintf("select s.stop_id, s.stop_name, s.stop_desc, s.stop_lat, s.stop_lon, s.location_type, 111195 * st_distance(point(%s, %s), s.stop_geo) as stop_distance from gtfs_%s.stops s where 111195 * st_distance(point(%s, %s), s.stop_geo) < %s order by stop_distance asc", lat, lon, agencyKey, lat, lon, distance)
     sw := stopwatch.Start(0)
 
-    log.Printf("Query: %s", query)
-    rows, err := config.DB.Raw(query).Rows()
+    schema := fmt.Sprintf("gtfs_%s", agencyKey)
+    rows, err := database.Rows(sc.db, sc.connectInfos, "select-stops-by-date", lat, lon, schema, lat, lon, distance)
     defer rows.Close()
 
     log.Printf("[STOP_SERVICE][FIND_NEAREST_STOPS] Data Fetch for [agencyKey=%s, date=%s, lat=%s, lon=%s, distance=%s] Done in %v", agencyKey, date, lat, lon, distance, sw.ElapsedTime());
@@ -404,7 +407,7 @@ func fetchStopsByDate(agencyKey, date, lat, lon, distance string) Stops {
             go func(stop Stop) {
                 defer func() { <-sem }()
 
-                stop.Routes = fetchRoutesForDateAndStop(agencyKey, date, stop)
+                stop.Routes = sc.fetchRoutesForDateAndStop(agencyKey, date, stop)
 
                 if len(stop.Routes) > 0 {
                     stopChan <- stop
@@ -429,15 +432,15 @@ func fetchStopsByDate(agencyKey, date, lat, lon, distance string) Stops {
     return stops
 }
 
-func fetchRoutesForDateAndStop(agencyKey, date string, stop Stop) Routes {
+func (sc *StopController) fetchRoutesForDateAndStop(agencyKey, date string, stop Stop) Routes {
 //    log.Printf("Fetching routes for stop: %v", stop)
 
-    stfs := fetchStopTimesFullForDateAndStop(agencyKey, date, stop)
+    stfs := sc.fetchStopTimesFullForDateAndStop(agencyKey, date, stop)
 
-    return groupStopTimesFullByRoute(stfs)
+    return sc.groupStopTimesFullByRoute(stfs)
 }
 
-func groupStopTimesFullByRoute(stfs []StopTimeFull) Routes {
+func (sc *StopController) groupStopTimesFullByRoute(stfs []StopTimeFull) Routes {
 
     stfsByRouteShortName := make(map[string][]StopTimeFull, 0)
 
@@ -463,7 +466,7 @@ func groupStopTimesFullByRoute(stfs []StopTimeFull) Routes {
     return routes
 }
 
-func fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopTimeFull {
+func (sc *StopController) fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopTimeFull {
 //    log.Printf("Fetching stop times full for date: %s & stop: %v", date, stop)
 
     day, _ := time.Parse("2006-01-02", date)
@@ -477,8 +480,8 @@ func fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopT
 
 //        sw := stopwatch.Start(0)
 
-        go fetchStopTimesFullForCalendar(agencyKey, stop, date, dayOfWeek, stfChan, &wg)
-        go fetchStopTimesFullForCalendarDates(agencyKey, stop, date, stfChan, &wg)
+        go sc.fetchStopTimesFullForCalendar(agencyKey, stop, date, dayOfWeek, stfChan, &wg)
+        go sc.fetchStopTimesFullForCalendarDates(agencyKey, stop, date, stfChan, &wg)
 
         wg.Wait()
 
@@ -500,38 +503,11 @@ func fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopT
     return stfs
 }
 
-func fetchStopTimesFullForCalendar(agencyKey string, stop Stop, date, dayOfWeek string, stfChan chan StopTimeFull, wg *sync.WaitGroup) {
-    queryCalendar := fmt.Sprintf(
-        "select" +
-        "    stf.stop_id," +
-        "    stf.stop_name," +
-        "    stf.stop_desc," +
-        "    stf.stop_lat," +
-        "    stf.stop_lon," +
-        "    stf.location_type," +
-        "    stf.arrival_time," +
-        "    stf.departure_time," +
-        "    stf.stop_sequence," +
-        "    stf.direction_id," +
-        "    stf.route_short_name," +
-        "    stf.route_type," +
-        "    stf.route_color," +
-        "    stf.route_text_color," +
-        "    stf.trip_id" +
-        " from " +
-        "    gtfs_%s.stop_times_full stf inner join" +
-        "    gtfs_%s.calendars c on stf.service_id=c.service_id" +
-        " where " +
-        "    stf.stop_id=%d and" +
-        "    c.start_date <= '%s' and" +
-        "    c.end_date >= '%s' and %s=1", agencyKey, agencyKey, stop.Id, date, date, dayOfWeek)
-//        "    c.end_date >= '%s' and %s=1", agencyKey, agencyKey, stop.Id, date, date, dayOfWeek/*, time.Now().Format("15:04:05"), 5*/)
+func (sc *StopController) fetchStopTimesFullForCalendar(agencyKey string, stop Stop, date, dayOfWeek string, stfChan chan StopTimeFull, wg *sync.WaitGroup) {
 
-//    log.Printf("Query calendar: %s", queryCalendar)
+    calendarRows, err := database.Rows(sc.db, sc.connectInfos, "select-stop-times-by-calendars", agencyKey, agencyKey, stop.Id, date, date, dayOfWeek)
 
-    calendarRows, err := config.DB.Raw(queryCalendar).Rows()
-
-    utils.FailOnError(err, "Calendar row fetch error")
+    utils.FailOnError(err, "Calendars row fetch error")
 
     defer func() {
         calendarRows.Close()
@@ -554,34 +530,11 @@ func fetchStopTimesFullForCalendar(agencyKey string, stop Stop, date, dayOfWeek 
     }
 }
 
-func fetchStopTimesFullForCalendarDates(agencyKey string, stop Stop, date string, stfChan chan StopTimeFull, wg *sync.WaitGroup) {
-    queryCalendarDate := fmt.Sprintf(
-        "select" +
-        "    stf.stop_id," +
-        "    stf.stop_name," +
-        "    stf.stop_desc," +
-        "    stf.stop_lat," +
-        "    stf.stop_lon," +
-        "    stf.location_type," +
-        "    stf.arrival_time," +
-        "    stf.departure_time," +
-        "    stf.stop_sequence," +
-        "    stf.direction_id," +
-        "    stf.route_short_name," +
-        "    stf.route_type," +
-        "    stf.route_color," +
-        "    stf.route_text_color," +
-        "    stf.trip_id" +
-        " from" +
-        "    gtfs_%s.stop_times_full stf inner join" +
-        "    gtfs_%s.calendar_dates cd on stf.service_id=cd.service_id" +
-        " where" +
-        "    stf.stop_id=%d and cd.date = '%s'", agencyKey, agencyKey, stop.Id, date)
-//        "    stf.stop_id=%d and cd.date = '%s'", agencyKey, agencyKey, stop.Id, date/*, time.Now().Format("15:04:05"), 5*/)
+func (sc *StopController) fetchStopTimesFullForCalendarDates(agencyKey string, stop Stop, date string, stfChan chan StopTimeFull, wg *sync.WaitGroup) {
 
-//    log.Printf("Query calendar dates : %s", queryCalendarDate)
+    calendarDateRows, err := database.Rows(sc.db, sc.connectInfos, "select-stop-times-by-calendar-dates", agencyKey, agencyKey, stop.Id, date)
 
-    calendarDateRows, _ := config.DB.Raw(queryCalendarDate).Rows()
+    utils.FailOnError(err, "Calendar dates row fetch error")
 
     defer func() {
         calendarDateRows.Close()

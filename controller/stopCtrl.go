@@ -185,6 +185,7 @@ func (sc *StopController) NearestStops(w http.ResponseWriter, r *http.Request) {
 
     log.Printf("Extracting Trip Ids ...")
     tripIds := sc.extractTripIds(stops)
+    log.Printf("Extracted Trip Ids: %v", tripIds)
 
     log.Printf("Fetching First And Last StopNames By Trip Ids ...")
     flStopNamesByTripId := sc.fetchFirstAndLastStopNamesByTripIds(agencyKey, tripIds)
@@ -293,49 +294,33 @@ func (sc *StopController) mergeFlStopNamesByTripIdWithStopRoutes(stops *Stops, f
 
 func (sc *StopController) fetchFirstAndLastStopNamesByTripIds(agencyKey string, tripIds []int) map[int]FirstLastStopNamesByTripId {
 
-    flStopNamesByTripIdChan := make(chan FirstLastStopNamesByTripId)
+    sw := stopwatch.Start(0)
 
-    sem := make(chan bool, 64)
+    keys := make([]string, len(tripIds))
 
-    go func() {
-        for _, tripId := range tripIds {
+    for i, tripId := range tripIds {
+        keys[i] = fmt.Sprintf("/%s/t/st/fl/%d", agencyKey, tripId)
+    }
 
-            sem <- true
-
-            go func(tripId int) {
-
-                defer func() { <-sem }()
-
-//                sw := stopwatch.Start(0)
-
-                key := fmt.Sprintf("/%s/t/st/fl/%d", agencyKey, tripId)
-                tripPayload := sc.redis.Get(key)
-                value := tripPayload.Val()
-
-                tripFirstLast := make([]string, 2)
-
-                err := json.Unmarshal([]byte(value), &tripFirstLast)
-                if err != nil {
-                    log.Printf(" * Error: '%s' ...", err.Error())
-                }
-
-//                log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for key: '%s' Done in %v", key, sw.ElapsedTime());
-
-                flStopNamesByTripIdChan <- FirstLastStopNamesByTripId{tripId, tripFirstLast[0], tripFirstLast[1]}
-            }(tripId)
-        }
-
-        for i := 0; i < cap(sem); i++ {
-            sem <- true
-        }
-
-        close(flStopNamesByTripIdChan)
-    }()
-
+    tripPayloads, _ := sc.redis.MGet(keys...).Result()
     flStopNamesByTripIds := make(map[int]FirstLastStopNamesByTripId)
 
-    for flStopNamesByTripId := range flStopNamesByTripIdChan {
-        flStopNamesByTripIds[flStopNamesByTripId.TripId] = flStopNamesByTripId
+    for i, tripPayload := range tripPayloads {
+        tripId := tripIds[i]
+//        log.Printf("tripPayload %d: %v", tripId, tripPayload)
+        value := tripPayload.(string)
+
+        tripFirstLast := make([]string, 2)
+
+        err := json.Unmarshal([]byte(value), &tripFirstLast)
+        if err != nil {
+            log.Printf(" * Error: '%s' ...", err.Error())
+        }
+
+//        log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for tripIds: '%v' Done in %v", tripIds, sw.ElapsedTime());
+        log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for %d tripIds Done in %v", len(tripIds), sw.ElapsedTime());
+
+        flStopNamesByTripIds[tripId] = FirstLastStopNamesByTripId{tripId, tripFirstLast[0], tripFirstLast[1]}
     }
 
     return flStopNamesByTripIds

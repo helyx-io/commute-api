@@ -159,7 +159,7 @@ func (sc *StopController) Init(db *gorm.DB, connectInfos *config.DBConnectInfos,
     dml, err := data.Asset(filePath)
     utils.FailOnError(err, fmt.Sprintf("Could get dml resource at path '%s' for exec", filePath))
     sc.selectStopsByDate = string(dml)
-    log.Printf("Exec Stmt: '%s'", sc.selectStopsByDate)
+    //    log.Printf("Exec Stmt: '%s'", sc.selectStopsByDate)
 
 
     // Init Router
@@ -186,6 +186,8 @@ func (sc *StopController) NearestStops(w http.ResponseWriter, r *http.Request) {
         distance = "1000"
     }
 
+    timeOfDay := time.Now().Format("15:04:05")
+
 //    log.Printf("Agency Key: %s", agencyKey)
 //    log.Printf("Lat: %s", lat)
 //    log.Printf("Lon: %s", lon)
@@ -193,7 +195,7 @@ func (sc *StopController) NearestStops(w http.ResponseWriter, r *http.Request) {
 //    log.Printf("Date: %s", date)
 
 //    log.Printf("Fetching stops by date ...")
-    stops := sc.fetchStopsByDate(agencyKey, date, lat, lon, distance)
+    stops := sc.fetchStopsByDate(agencyKey, date, timeOfDay, lat, lon, distance)
 //    log.Printf("Stops[%d] %v", len(stops), stops)
 
 //    log.Printf("Extracting Trip Ids ...")
@@ -358,7 +360,7 @@ func (sc *StopController) extractTripIds(stops Stops) []int {
     return tripIds
 }
 
-func (sc *StopController) fetchStopsByDate(agencyKey, date, lat, lon, distance string) Stops {
+func (sc *StopController) fetchStopsByDate(agencyKey, date, timeOfDay, lat, lon, distance string) Stops {
 
     sw := stopwatch.Start(0)
 
@@ -392,14 +394,14 @@ func (sc *StopController) fetchStopsByDate(agencyKey, date, lat, lon, distance s
 
             stop := Stop{id, name, desc, lat, lon, locationType, distance, nil}
 
-//            log.Printf("Stop: %v", stop)
+            log.Printf("Stop: %v", stop)
 
             sem <- true
 
             go func(stop Stop) {
                 defer func() { <-sem }()
 
-                stop.Routes = sc.fetchRoutesForDateAndStop(agencyKey, date, stop)
+                stop.Routes = sc.fetchRoutesForDateAndStop(agencyKey, date, timeOfDay, stop)
 
                 if len(stop.Routes) > 0 {
                     stopChan <- stop
@@ -424,10 +426,10 @@ func (sc *StopController) fetchStopsByDate(agencyKey, date, lat, lon, distance s
     return stops
 }
 
-func (sc *StopController) fetchRoutesForDateAndStop(agencyKey, date string, stop Stop) Routes {
+func (sc *StopController) fetchRoutesForDateAndStop(agencyKey, date, timeOfDay string, stop Stop) Routes {
 //    log.Printf("Fetching routes for stop: %v", stop)
 
-    stfs := sc.fetchStopTimesFullForDateAndStop(agencyKey, date, stop)
+    stfs := sc.fetchStopTimesFullForDateAndStop(agencyKey, date, timeOfDay, stop)
 
     return sc.groupStopTimesFullByRoute(stfs)
 }
@@ -458,7 +460,7 @@ func (sc *StopController) groupStopTimesFullByRoute(stfs []StopTimeFull) Routes 
     return routes
 }
 
-func (sc *StopController) fetchStopTimesFullForDateAndStop(agencyKey, date string, stop Stop) []StopTimeFull {
+func (sc *StopController) fetchStopTimesFullForDateAndStop(agencyKey, date, timeOfDay string, stop Stop) []StopTimeFull {
 //    log.Printf("Fetching stop times full for date: %s & stop: %v", date, stop)
 
     day, _ := time.Parse("2006-01-02", date)
@@ -484,11 +486,11 @@ func (sc *StopController) fetchStopTimesFullForDateAndStop(agencyKey, date strin
 
     stfs := make([]StopTimeFull, 0)
 
-    currentTime := time.Now().Format("15:04:05")
+    // currentTime := time.Now().Format("15:04:05")
 
     for stf := range stfChan {
 //        log.Printf("stfs: %v - currentTime: %v", stf.DepartureTime, currentTime)
-        if len(stfs) < 5 && stf.DepartureTime >= currentTime {
+        if stf.DepartureTime >= timeOfDay {
             stfs = append(stfs, stf)
         }
     }

@@ -101,7 +101,7 @@ func createLoggerConfig() *LoggerConfig {
 
     loggerConfig := &LoggerConfig{loggerFilePath}
 
-    log.Printf("[CONFIG] Application - Logger File Path : %d", loggerConfig.Path)
+    log.Printf("[CONFIG] Application - Logger File Path : '%s'", loggerConfig.Path)
 
     return loggerConfig
 }
@@ -163,7 +163,7 @@ func createConnectInfos() *DBConnectInfos {
     if dbURL == "" {
         log.Printf("[CONFIG] DB infos - Dialect : '%s'", dbDialect)
         log.Printf("[CONFIG] DB infos - Hostname : '%s'", dbHostname)
-        log.Printf("[CONFIG] DB infos - Port : '%s'", dbPort)
+        log.Printf("[CONFIG] DB infos - Port : %s", dbPort)
         log.Printf("[CONFIG] DB infos - Database : '%s'", dbDatabase)
         log.Printf("[CONFIG] DB infos - Username : '%s'", dbUsername)
         log.Printf("[CONFIG] DB infos - Password : '%s'", "********")
@@ -181,12 +181,12 @@ func createConnectInfos() *DBConnectInfos {
 
     dbMinCnx, _ := strconv.Atoi(os.Getenv("GTFS_DB_MIN_CNX"))
     if dbMinCnx == 0 {
-        dbMinCnx = 2
+        dbMinCnx = 128
     }
 
     dbMaxCnx, _ := strconv.Atoi(os.Getenv("GTFS_DB_MAX_CNX"))
     if dbMaxCnx == 0 {
-        dbMaxCnx = 100
+        dbMaxCnx = 128
     }
 
     log.Printf("[CONFIG] DB infos - Min Connections : %d", dbMinCnx)

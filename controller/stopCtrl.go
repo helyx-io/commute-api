@@ -19,6 +19,9 @@ import (
     "github.com/helyx-io/gtfs-api/utils"
     "github.com/jinzhu/gorm"
     "github.com/helyx-io/gtfs-api/database"
+    "github.com/helyx-io/gtfs-api/data"
+    "encoding/hex"
+    "strings"
 )
 
 
@@ -141,6 +144,7 @@ type StopController struct {
     db *gorm.DB
     redis *redis.Client
     connectInfos *config.DBConnectInfos
+    selectStopsByDate string
 }
 
 func (sc *StopController) Init(db *gorm.DB, connectInfos *config.DBConnectInfos, redis *redis.Client, r *mux.Router) {
@@ -148,6 +152,15 @@ func (sc *StopController) Init(db *gorm.DB, connectInfos *config.DBConnectInfos,
     sc.db = db
     sc.connectInfos = connectInfos
     sc.redis = redis
+
+    filePath := fmt.Sprintf("resources/ddl/%s/%s.sql", connectInfos.Dialect, "select-stops-by-date")
+    //    log.Printf("Executing query from file path: '%s' - Params: %v", filePath, params)
+
+    dml, err := data.Asset(filePath)
+    utils.FailOnError(err, fmt.Sprintf("Could get dml resource at path '%s' for exec", filePath))
+    sc.selectStopsByDate = string(dml)
+    log.Printf("Exec Stmt: '%s'", sc.selectStopsByDate)
+
 
     // Init Router
     r.HandleFunc("/{date}/nearest", sc.NearestStops)
@@ -173,24 +186,24 @@ func (sc *StopController) NearestStops(w http.ResponseWriter, r *http.Request) {
         distance = "1000"
     }
 
-    log.Printf("Agency Key: %s", agencyKey)
-    log.Printf("Lat: %s", lat)
-    log.Printf("Lon: %s", lon)
-    log.Printf("Distance: %s", distance)
-    log.Printf("Date: %s", date)
+//    log.Printf("Agency Key: %s", agencyKey)
+//    log.Printf("Lat: %s", lat)
+//    log.Printf("Lon: %s", lon)
+//    log.Printf("Distance: %s", distance)
+//    log.Printf("Date: %s", date)
 
-
-    log.Printf("Fetching stops by date ...")
+//    log.Printf("Fetching stops by date ...")
     stops := sc.fetchStopsByDate(agencyKey, date, lat, lon, distance)
+//    log.Printf("Stops[%d] %v", len(stops), stops)
 
-    log.Printf("Extracting Trip Ids ...")
+//    log.Printf("Extracting Trip Ids ...")
     tripIds := sc.extractTripIds(stops)
-    log.Printf("Extracted Trip Ids: %v", tripIds)
+//    log.Printf("TripIds[%d] %v", len(tripIds), tripIds)
 
-    log.Printf("Fetching First And Last StopNames By Trip Ids ...")
+//    log.Printf("Fetching First And Last StopNames By Trip Ids ...")
     flStopNamesByTripId := sc.fetchFirstAndLastStopNamesByTripIds(agencyKey, tripIds)
 
-    log.Printf("Merge First and Last StopNames By TripId With Stop Routes ...")
+//    log.Printf("Merge First and Last StopNames By TripId With Stop Routes ...")
     sc.mergeFlStopNamesByTripIdWithStopRoutes(&stops, flStopNamesByTripId)
 
     log.Printf("-----------------------------------------------------------------------------------")
@@ -294,7 +307,7 @@ func (sc *StopController) mergeFlStopNamesByTripIdWithStopRoutes(stops *Stops, f
 
 func (sc *StopController) fetchFirstAndLastStopNamesByTripIds(agencyKey string, tripIds []int) map[int]FirstLastStopNamesByTripId {
 
-    sw := stopwatch.Start(0)
+//    sw := stopwatch.Start(0)
 
     keys := make([]string, len(tripIds))
 
@@ -318,7 +331,7 @@ func (sc *StopController) fetchFirstAndLastStopNamesByTripIds(agencyKey string, 
         }
 
 //        log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for tripIds: '%v' Done in %v", tripIds, sw.ElapsedTime());
-        log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for %d tripIds Done in %v", len(tripIds), sw.ElapsedTime());
+//        log.Printf("[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for %d tripIds Done in %v", len(tripIds), sw.ElapsedTime());
 
         flStopNamesByTripIds[tripId] = FirstLastStopNamesByTripId{tripId, tripFirstLast[0], tripFirstLast[1]}
     }
@@ -350,7 +363,10 @@ func (sc *StopController) fetchStopsByDate(agencyKey, date, lat, lon, distance s
     sw := stopwatch.Start(0)
 
     schema := fmt.Sprintf("gtfs_%s", agencyKey)
-    rows, err := database.Rows(sc.db, sc.connectInfos, "select-stops-by-date", lat, lon, schema, lat, lon, distance)
+    query := fmt.Sprintf(sc.selectStopsByDate, lat, lon, schema, lat, lon, distance)
+//    log.Printf("Exec Stmt: '%s'", query)
+
+    rows, err := sc.db.Raw(query).Rows()
     defer rows.Close()
 
     log.Printf("[STOP_SERVICE][FIND_NEAREST_STOPS] Data Fetch for [agencyKey=%s, date=%s, lat=%s, lon=%s, distance=%s] Done in %v", agencyKey, date, lat, lon, distance, sw.ElapsedTime());
@@ -471,6 +487,7 @@ func (sc *StopController) fetchStopTimesFullForDateAndStop(agencyKey, date strin
     currentTime := time.Now().Format("15:04:05")
 
     for stf := range stfChan {
+//        log.Printf("stfs: %v - currentTime: %v", stf.DepartureTime, currentTime)
         if len(stfs) < 5 && stf.DepartureTime >= currentTime {
             stfs = append(stfs, stf)
         }
@@ -491,19 +508,28 @@ func (sc *StopController) fetchStopTimesFullForCalendar(agencyKey string, stop S
     }()
 
     var stopId, locationType, stopSequence, directionId, routeType, tripId int
-    var stopName, stopDesc, stopLat, stopLon, arrivalTime, departureTime, routeShortName, routeColor, routeTextColor string
+    var stopName, stopDesc, stopLat, stopLon, arrivalTime, departureTime, routeShortName string
+
+    var routeColor, routeTextColor int32
 
     for calendarRows.Next() {
         calendarRows.Scan(
-        &stopId, &stopName, &stopDesc, &stopLat, &stopLon, &locationType, &arrivalTime, &departureTime,
-        &stopSequence, &directionId, &routeShortName, &routeType, &routeColor, &routeTextColor, &tripId,
+            &stopId, &stopName, &stopDesc, &stopLat, &stopLon, &locationType, &arrivalTime, &departureTime,
+            &stopSequence, &directionId, &routeShortName, &routeType, &routeColor, &routeTextColor, &tripId,
         )
 
-        log.Printf("StopId: %s", stopId)
-        log.Printf("StopName: %s", stopName)
-
-        stfChan <- StopTimeFull{stopId, stopName, stopDesc, stopLat, stopLon, locationType, arrivalTime, departureTime, stopSequence, directionId, routeShortName, routeType, routeColor, routeTextColor, tripId}
+        stfChan <- StopTimeFull{stopId, stopName, stopDesc, stopLat, stopLon, locationType, arrivalTime, departureTime, stopSequence, directionId, routeShortName, routeType, int32ToColor(routeColor), int32ToColor(routeTextColor), tripId}
     }
+}
+
+func int32ToColor(intColor int32) string {
+    var b = make([]byte, 3)
+
+    b[0] = uint8(intColor)
+    b[1] = uint8(intColor >> 8)
+    b[2] = uint8(intColor >> 16)
+
+    return strings.ToUpper(hex.EncodeToString(b))
 }
 
 func (sc *StopController) fetchStopTimesFullForCalendarDates(agencyKey string, stop Stop, date string, stfChan chan StopTimeFull, wg *sync.WaitGroup) {
@@ -518,15 +544,19 @@ func (sc *StopController) fetchStopTimesFullForCalendarDates(agencyKey string, s
     }()
 
     var stopId, locationType, stopSequence, directionId, routeType, tripId int
-    var stopName, stopDesc, stopLat, stopLon, arrivalTime, departureTime, routeShortName, routeColor, routeTextColor string
+    var stopName, stopDesc, stopLat, stopLon, arrivalTime, departureTime, routeShortName string
+
+    var routeColor, routeTextColor int32
 
     for calendarDateRows.Next() {
         calendarDateRows.Scan(
-        &stopId, &stopName, &stopDesc, &stopLat, &stopLon, &locationType, &arrivalTime, &departureTime,
-        &stopSequence, &directionId, &routeShortName, &routeType, &routeColor, &routeTextColor, &tripId,
+            &stopId, &stopName, &stopDesc, &stopLat, &stopLon, &locationType, &arrivalTime, &departureTime,
+            &stopSequence, &directionId, &routeShortName, &routeType, &routeColor, &routeTextColor, &tripId,
         )
 
-        stfChan <- StopTimeFull{stopId, stopName, stopDesc, stopLat, stopLon, locationType, arrivalTime, departureTime, stopSequence, directionId, routeShortName, routeType, routeColor, routeTextColor, tripId}
+//        log.Printf("departureTime: %s", departureTime)
+
+        stfChan <- StopTimeFull{stopId, stopName, stopDesc, stopLat, stopLon, locationType, arrivalTime, departureTime, stopSequence, directionId, routeShortName, routeType, int32ToColor(routeColor), int32ToColor(routeTextColor), tripId}
     }
 
 }

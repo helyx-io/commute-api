@@ -20,6 +20,8 @@ import (
     "github.com/jinzhu/gorm"
     "gopkg.in/redis.v2"
     "github.com/helyx-io/gtfs-api/database"
+//    "github.com/davecheney/profile"
+//    "os/signal"
 )
 
 
@@ -43,9 +45,16 @@ func main() {
 	// Init Runtime
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// Init Profiling
-	//	defer profile.Start(profile.MemProfile).Stop()
-	//	defer profile.Start(profile.CPUProfile).Stop()
+//	// Init Profiling
+//	// defer profile.Start(profile.MemProfile).Stop()
+//	p := profile.Start(profile.CPUProfile)
+//
+//    c := make(chan os.Signal, 1)
+//    signal.Notify(c, os.Interrupt)
+//    go func(){
+//        p.Stop()
+//    }()
+
 
     // Init Config
     config := config.Init();

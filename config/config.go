@@ -63,7 +63,7 @@ func Init() *Config {
 }
 
 func getBaseURL() string {
-    baseURL := os.Getenv("GTFS_BASE_URL")
+    baseURL := os.Getenv("BASE_URL")
 
     log.Printf("[CONFIG] Application - Base URL : '%s'", baseURL)
 
@@ -71,7 +71,7 @@ func getBaseURL() string {
 }
 
 func getTmpDir() string {
-    tmpDir := os.Getenv("GTFS_TMP_DIR")
+    tmpDir := os.Getenv("TMP_DIR")
 
     log.Printf("[CONFIG] Application - Temp Directory : '%s'", tmpDir)
 
@@ -96,7 +96,7 @@ func createLoggerConfig() *LoggerConfig {
 
     loggerFilePath := os.Getenv("LOGGER_FILE_PATH")
     if loggerFilePath == "" {
-        loggerFilePath = "/var/log/gtfs-importer/access.log"
+        loggerFilePath = "/var/log/commute-api/access.log"
     }
 
     loggerConfig := &LoggerConfig{loggerFilePath}
@@ -129,37 +129,37 @@ func createRedisConfig() *RedisConfig {
 
 func createConnectInfos() *DBConnectInfos {
 
-    dbDialect := os.Getenv("GTFS_DB_DIALECT")
+    dbDialect := os.Getenv("DB_DIALECT")
     if dbDialect == "" {
         dbDialect = "mysql"
     }
 
-    dbHostname := os.Getenv("GTFS_DB_HOSTNAME")
+    dbHostname := os.Getenv("DB_HOSTNAME")
     if dbHostname == "" {
         dbHostname = "localhost"
     }
 
-    dbPort := os.Getenv("GTFS_DB_PORT")
+    dbPort := os.Getenv("DB_PORT")
     if dbPort == "" {
         dbPort = "3306"
     }
 
-    dbUsername := os.Getenv("GTFS_DB_USERNAME")
+    dbUsername := os.Getenv("DB_USERNAME")
     if dbUsername == "" {
-        dbUsername = "gtfs"
+        dbUsername = "commute"
     }
 
-    dbPassword := os.Getenv("GTFS_DB_PASSWORD")
+    dbPassword := os.Getenv("DB_PASSWORD")
     if dbPassword == "" {
-        dbPassword = "gtfs"
+        dbPassword = "commute"
     }
 
-    dbDatabase := os.Getenv("GTFS_DB_DATABASE")
+    dbDatabase := os.Getenv("DB_DATABASE")
     if dbDatabase == "" {
-        dbDatabase = "gtfs"
+        dbDatabase = "commute"
     }
 
-    dbURL := os.Getenv("GTFS_DB_URL")
+    dbURL := os.Getenv("DB_URL")
     if dbURL == "" {
         log.Printf("[CONFIG] DB infos - Dialect : '%s'", dbDialect)
         log.Printf("[CONFIG] DB infos - Hostname : '%s'", dbHostname)
@@ -179,12 +179,12 @@ func createConnectInfos() *DBConnectInfos {
 
     log.Printf("[CONFIG] DB infos - URL : '%s'", dbURL)
 
-    dbMinCnx, _ := strconv.Atoi(os.Getenv("GTFS_DB_MIN_CNX"))
+    dbMinCnx, _ := strconv.Atoi(os.Getenv("DB_MIN_CNX"))
     if dbMinCnx == 0 {
         dbMinCnx = 128
     }
 
-    dbMaxCnx, _ := strconv.Atoi(os.Getenv("GTFS_DB_MAX_CNX"))
+    dbMaxCnx, _ := strconv.Atoi(os.Getenv("DB_MAX_CNX"))
     if dbMaxCnx == 0 {
         dbMaxCnx = 128
     }

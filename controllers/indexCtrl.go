@@ -1,4 +1,4 @@
-package controller
+package controllers
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// Imports
@@ -20,14 +20,18 @@ type IndexController struct {
 	*mux.Router
 }
 
-func (c *IndexController) Init(r *mux.Router) {
+func NewIndexController(r *mux.Router) *IndexController {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/", c.indexHandler)
+	ic := IndexController{}
+
+	router.HandleFunc("/", ic.indexHandler)
 
 	handlerChain := alice.New().Then(router)
 
 	r.Handle("/", http.Handler(handlerChain))
+
+	return &ic
 }
 
 func (c *IndexController) indexHandler(w http.ResponseWriter, r *http.Request) {

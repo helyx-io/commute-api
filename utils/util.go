@@ -6,7 +6,10 @@ package utils
 
 import (
 	"log"
+    "strings"
     "net/http"
+    "encoding/hex"
+    "runtime/debug"
 )
 
 
@@ -24,8 +27,20 @@ func FailOnError(err error, msg string) {
 func RecoverFromError(w http.ResponseWriter) {
     if r := recover(); r != nil {
         err, _ := r.(error)
-        log.Println("Err:", err.Error());
+
+        log.Printf("Err: % - Stack: %v", err.Error(), string(debug.Stack()));
         http.Error(w, err.Error(), 500)
         return
     }
+}
+
+
+func Int32ToColor(intColor int32) string {
+    var b = make([]byte, 3)
+
+    b[0] = uint8(intColor)
+    b[1] = uint8(intColor >> 8)
+    b[2] = uint8(intColor >> 16)
+
+    return strings.ToUpper(hex.EncodeToString(b))
 }

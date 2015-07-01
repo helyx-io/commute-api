@@ -29,6 +29,6 @@ src/github.com/gorilla
 src/labix.org
 access.log
 app
-gtfs-api
+commute-api
 out
-gtfs-api.iml
+commute-api.iml

@@ -6,7 +6,7 @@ package mysql
 
 import (
     "github.com/jinzhu/gorm"
-    "github.com/helyx-io/gtfs-api/database"
+    "github.com/helyx-io/commute-api/database"
     _ "github.com/go-sql-driver/mysql"
 )
 

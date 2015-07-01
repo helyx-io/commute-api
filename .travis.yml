@@ -7,5 +7,5 @@ before_install:
     - go get code.google.com/p/go.tools/cmd/cover
 
 script:
-    - gocov test github.com/helyx-io/gtfs-api/utils | gocov report
-    - goveralls -package="github.com/helyx-io/gtfs-api/utils"
+    - gocov test github.com/helyx-io/commute-api/utils | gocov report
+    - goveralls -package="github.com/helyx-io/commute-api/utils"

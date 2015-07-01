@@ -61,7 +61,7 @@ func (fi bindata_file_info) Sys() interface{} {
 	return nil
 }
 
-var _resources_ddl_mysql_select_nearest_stations_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x74\x8d\x51\x0a\xc2\x30\x10\x44\xaf\xb2\x3f\xfe\x89\x27\x50\xaf\x22\x4b\x3b\x8d\xc1\x64\x02\x49\x44\xeb\xe9\xad\x15\xb7\x34\xd2\xbf\x79\xfb\x98\x9d\x82\x80\xae\x8a\x3a\xb0\x1b\x2f\x37\x8c\xfb\x5f\xf6\xbd\x45\x6a\x84\xc1\x3d\x07\xcb\xd5\x47\xbc\x12\x17\x19\x94\xce\x20\x7a\x4e\x87\xba\xb0\x3e\xd7\xfc\xf1\x89\x6b\x9f\x28\x43\x4e\x51\x5c\x1d\xca\x61\x16\x1e\x45\x1e\x57\x64\x34\x7f\xe5\x78\x92\x5d\x11\x65\xdf\x0c\xc8\xf9\x4f\x7c\x97\x36\x1a\x93\x98\x1b\xef\x00\x00\x00\xff\xff\xea\x44\x32\x64\x0c\x01\x00\x00")
+var _resources_ddl_mysql_select_nearest_stations_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x74\x8d\x41\x0e\xc2\x30\x0c\x04\xbf\xe2\x0b\x37\xc4\x0b\x80\xaf\x20\x2b\x5d\x4a\x44\x6c\x4b\x49\x2a\x28\xaf\xa7\x14\xe1\xaa\x41\xbd\xed\x78\xb4\xde\x82\x84\x50\x89\x7b\x68\x18\x2f\x77\x8c\xfb\x5f\x8e\x9d\x47\x65\x81\xc3\x90\x93\xe7\x1a\x05\x2f\xd3\x45\x26\xd6\xde\x41\xa2\x4e\x87\xba\x30\x3f\xd7\xfc\xf1\xa6\x6b\x6f\x4a\xd7\x6c\x42\xc1\x44\x86\x8a\xc3\xec\x22\x0a\x3d\x6e\xc8\x68\x5e\xd3\xf1\x44\xbb\x42\xac\x5d\xb3\x41\xe7\x3f\xf1\x1d\xdb\x68\x4c\x62\x6e\xbc\x03\x00\x00\xff\xff\xc6\x97\xc3\x40\x0f\x01\x00\x00")
 
 func resources_ddl_mysql_select_nearest_stations_sql_bytes() ([]byte, error) {
 	return bindata_read(
@@ -76,7 +76,27 @@ func resources_ddl_mysql_select_nearest_stations_sql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "resources/ddl/mysql/select-nearest-stations.sql", size: 268, mode: os.FileMode(420), modTime: time.Unix(1428879790, 0)}
+	info := bindata_file_info{name: "resources/ddl/mysql/select-nearest-stations.sql", size: 271, mode: os.FileMode(420), modTime: time.Unix(1431811253, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _resources_ddl_mysql_select_stop_by_id_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x2a\x4e\xcd\x49\x4d\x2e\xe1\x52\x00\x82\x62\xbd\xe2\x92\xfc\x82\xf8\xcc\x14\x1d\x64\x6e\x5e\x62\x6e\x2a\x8a\x40\x4a\x6a\x71\x32\x8a\x40\x4e\x62\x09\x2a\x3f\x3f\x0f\xc6\xcf\xc9\x4f\x4e\x2c\xc9\xcc\xcf\x8b\x2f\xa9\x2c\x48\xe5\x4a\x2b\xca\xcf\x05\x4b\xa8\x42\x54\x16\x2b\x14\x73\x95\x67\xa4\x16\xa5\xa2\x5a\xaf\x60\x0b\x54\xc0\x05\x08\x00\x00\xff\xff\xe0\xdc\x90\x59\x99\x00\x00\x00")
+
+func resources_ddl_mysql_select_stop_by_id_sql_bytes() ([]byte, error) {
+	return bindata_read(
+		_resources_ddl_mysql_select_stop_by_id_sql,
+		"resources/ddl/mysql/select-stop-by-id.sql",
+	)
+}
+
+func resources_ddl_mysql_select_stop_by_id_sql() (*asset, error) {
+	bytes, err := resources_ddl_mysql_select_stop_by_id_sql_bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindata_file_info{name: "resources/ddl/mysql/select-stop-by-id.sql", size: 153, mode: os.FileMode(420), modTime: time.Unix(1435346467, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -141,7 +161,7 @@ func resources_ddl_mysql_select_stops_by_date_sql() (*asset, error) {
 	return a, nil
 }
 
-var _resources_ddl_postgres_select_nearest_stations_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x74\x8d\x51\x0a\xc2\x30\x10\x44\xaf\xb2\x3f\xfe\x89\x27\x50\xaf\x22\x4b\x3b\x8d\xc1\x64\x02\x49\x44\xeb\xe9\xad\x15\xb7\x34\xd2\xbf\x79\xfb\x98\x9d\x82\x80\xae\x8a\x3a\xb0\x1b\x2f\x37\x8c\xfb\x5f\xf6\xbd\x45\x6a\x84\xc1\x3d\x07\xcb\xd5\x47\xbc\x12\x17\x19\x94\xce\x20\x7a\x4e\x87\xba\xb0\x3e\xd7\xfc\xf1\x89\x6b\x9f\x28\x43\x4e\x51\x5c\x1d\xca\x61\x16\x1e\x45\x1e\x57\x64\x34\x7f\xe5\x78\x92\x5d\x11\x65\xdf\x0c\xc8\xf9\x4f\x7c\x97\x36\x1a\x93\x98\x1b\xef\x00\x00\x00\xff\xff\xea\x44\x32\x64\x0c\x01\x00\x00")
+var _resources_ddl_postgres_select_nearest_stations_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x74\x8d\x41\x0e\xc2\x30\x0c\x04\xbf\xe2\x0b\x37\xc4\x0b\x80\xaf\x20\x2b\x5d\x4a\x44\x6c\x4b\x49\x2a\x28\xaf\xa7\x14\xe1\xaa\x41\xbd\xed\x78\xb4\xde\x82\x84\x50\x89\x7b\x68\x18\x2f\x77\x8c\xfb\x5f\x8e\x9d\x47\x65\x81\xc3\x90\x93\xe7\x1a\x05\x2f\xd3\x45\x26\xd6\xde\x41\xa2\x4e\x87\xba\x30\x3f\xd7\xfc\xf1\xa6\x6b\x6f\x4a\xd7\x6c\x42\xc1\x44\x86\x8a\xc3\xec\x22\x0a\x3d\x6e\xc8\x68\x5e\xd3\xf1\x44\xbb\x42\xac\x5d\xb3\x41\xe7\x3f\xf1\x1d\xdb\x68\x4c\x62\x6e\xbc\x03\x00\x00\xff\xff\xc6\x97\xc3\x40\x0f\x01\x00\x00")
 
 func resources_ddl_postgres_select_nearest_stations_sql_bytes() ([]byte, error) {
 	return bindata_read(
@@ -156,7 +176,27 @@ func resources_ddl_postgres_select_nearest_stations_sql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "resources/ddl/postgres/select-nearest-stations.sql", size: 268, mode: os.FileMode(420), modTime: time.Unix(1428879790, 0)}
+	info := bindata_file_info{name: "resources/ddl/postgres/select-nearest-stations.sql", size: 271, mode: os.FileMode(420), modTime: time.Unix(1431811253, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _resources_ddl_postgres_select_stop_by_id_sql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x2a\x4e\xcd\x49\x4d\x2e\xe1\x52\x00\x82\x62\xbd\xe2\x92\xfc\x82\xf8\xcc\x14\x1d\x64\x6e\x5e\x62\x6e\x2a\x8a\x40\x4a\x6a\x71\x32\x8a\x40\x4e\x62\x09\x2a\x3f\x3f\x0f\xc6\xcf\xc9\x4f\x4e\x2c\xc9\xcc\xcf\x8b\x2f\xa9\x2c\x48\xe5\x4a\x2b\xca\xcf\x05\x4b\xa8\x42\x54\x16\x2b\x14\x73\x95\x67\xa4\x16\xa5\xa2\x5a\xaf\x60\x0b\x54\xc0\x05\x08\x00\x00\xff\xff\xe0\xdc\x90\x59\x99\x00\x00\x00")
+
+func resources_ddl_postgres_select_stop_by_id_sql_bytes() ([]byte, error) {
+	return bindata_read(
+		_resources_ddl_postgres_select_stop_by_id_sql,
+		"resources/ddl/postgres/select-stop-by-id.sql",
+	)
+}
+
+func resources_ddl_postgres_select_stop_by_id_sql() (*asset, error) {
+	bytes, err := resources_ddl_postgres_select_stop_by_id_sql_bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindata_file_info{name: "resources/ddl/postgres/select-stop-by-id.sql", size: 153, mode: os.FileMode(420), modTime: time.Unix(1435346467, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -263,10 +303,12 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"resources/ddl/mysql/select-nearest-stations.sql": resources_ddl_mysql_select_nearest_stations_sql,
+	"resources/ddl/mysql/select-stop-by-id.sql": resources_ddl_mysql_select_stop_by_id_sql,
 	"resources/ddl/mysql/select-stop-times-by-calendar-dates.sql": resources_ddl_mysql_select_stop_times_by_calendar_dates_sql,
 	"resources/ddl/mysql/select-stop-times-by-calendars.sql": resources_ddl_mysql_select_stop_times_by_calendars_sql,
 	"resources/ddl/mysql/select-stops-by-date.sql": resources_ddl_mysql_select_stops_by_date_sql,
 	"resources/ddl/postgres/select-nearest-stations.sql": resources_ddl_postgres_select_nearest_stations_sql,
+	"resources/ddl/postgres/select-stop-by-id.sql": resources_ddl_postgres_select_stop_by_id_sql,
 	"resources/ddl/postgres/select-stop-times-by-calendar-dates.sql": resources_ddl_postgres_select_stop_times_by_calendar_dates_sql,
 	"resources/ddl/postgres/select-stop-times-by-calendars.sql": resources_ddl_postgres_select_stop_times_by_calendars_sql,
 	"resources/ddl/postgres/select-stops-by-date.sql": resources_ddl_postgres_select_stops_by_date_sql,
@@ -317,6 +359,8 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			"mysql": &_bintree_t{nil, map[string]*_bintree_t{
 				"select-nearest-stations.sql": &_bintree_t{resources_ddl_mysql_select_nearest_stations_sql, map[string]*_bintree_t{
 				}},
+				"select-stop-by-id.sql": &_bintree_t{resources_ddl_mysql_select_stop_by_id_sql, map[string]*_bintree_t{
+				}},
 				"select-stop-times-by-calendar-dates.sql": &_bintree_t{resources_ddl_mysql_select_stop_times_by_calendar_dates_sql, map[string]*_bintree_t{
 				}},
 				"select-stop-times-by-calendars.sql": &_bintree_t{resources_ddl_mysql_select_stop_times_by_calendars_sql, map[string]*_bintree_t{
@@ -326,6 +370,8 @@ var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 			}},
 			"postgres": &_bintree_t{nil, map[string]*_bintree_t{
 				"select-nearest-stations.sql": &_bintree_t{resources_ddl_postgres_select_nearest_stations_sql, map[string]*_bintree_t{
+				}},
+				"select-stop-by-id.sql": &_bintree_t{resources_ddl_postgres_select_stop_by_id_sql, map[string]*_bintree_t{
 				}},
 				"select-stop-times-by-calendar-dates.sql": &_bintree_t{resources_ddl_postgres_select_stop_times_by_calendar_dates_sql, map[string]*_bintree_t{
 				}},

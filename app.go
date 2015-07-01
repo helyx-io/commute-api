@@ -6,10 +6,10 @@ package main
 
 import (
 	"fmt"
-	appHandlers "github.com/helyx-io/gtfs-api/handlers"
-	"github.com/helyx-io/gtfs-api/config"
-	"github.com/helyx-io/gtfs-api/controller"
-	"github.com/helyx-io/gtfs-api/utils"
+	appHandlers "github.com/helyx-io/commute-api/handlers"
+	"github.com/helyx-io/commute-api/config"
+	"github.com/helyx-io/commute-api/controllers"
+	"github.com/helyx-io/commute-api/utils"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 
@@ -19,9 +19,8 @@ import (
 	"runtime"
     "github.com/jinzhu/gorm"
     "gopkg.in/redis.v2"
-    "github.com/helyx-io/gtfs-api/database"
-//    "github.com/davecheney/profile"
-//    "os/signal"
+    "github.com/helyx-io/commute-api/database"
+	"github.com/helyx-io/commute-api/services"
 )
 
 
@@ -108,11 +107,15 @@ func Close() {
 /// Router Configuration
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-func initRouter(db *gorm.DB, connectConfig *config.DBConnectInfos, redis *redis.Client) *mux.Router {
+func initRouter(db *gorm.DB, connectInfos *config.DBConnectInfos, redis *redis.Client) *mux.Router {
 	r := mux.NewRouter()
 
-	new(controller.IndexController).Init(r.PathPrefix("/").Subrouter())
-	new(controller.AgencyController).Init(db, connectConfig, redis, r.PathPrefix("/api/agencies").Subrouter())
+
+	as := services.NewAgencyService(db, connectInfos, redis)
+	ss := services.NewStopService(db, connectInfos, redis)
+
+	controllers.NewIndexController(r.PathPrefix("/").Subrouter())
+	controllers.NewAgencyController(as, ss, r.PathPrefix("/api/agencies").Subrouter())
 
 	return r
 }

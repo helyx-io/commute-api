@@ -5,9 +5,9 @@ import (
     "log"
     "database/sql"
     "github.com/jinzhu/gorm"
-    "github.com/helyx-io/gtfs-api/data"
-    "github.com/helyx-io/gtfs-api/utils"
-    "github.com/helyx-io/gtfs-api/config"
+    "github.com/helyx-io/commute-api/data"
+    "github.com/helyx-io/commute-api/utils"
+    "github.com/helyx-io/commute-api/config"
 
     _ "github.com/lib/pq"
     _ "github.com/go-sql-driver/mysql"

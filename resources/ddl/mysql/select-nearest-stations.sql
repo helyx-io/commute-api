@@ -1,1 +1,1 @@
-select agency_key, agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_min_lat, agency_max_lat, agency_min_lon, agency_max_lon from gtfs.agencies where agency_min_lat <= %s and agency_max_lat >= %s and agency_min_lon <= %s and agency_max_lon >= %s
+select agency_key, agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_min_lat, agency_max_lat, agency_min_lon, agency_max_lon from commute.agencies where agency_min_lat <= %s and agency_max_lat >= %s and agency_min_lon <= %s and agency_max_lon >= %s

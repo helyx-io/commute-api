@@ -146,7 +146,7 @@ func (ss *StopService) FetchStopsByDate(agencyKey, date, timeOfDay, lat, lon, di
 
     schema := fmt.Sprintf("gtfs_%s", agencyKey)
     query := fmt.Sprintf(ss.selectStopsByDate, lat, lon, schema, lat, lon, distance)
-    log.Printf("Exec Stmt 1: '%s'", query)
+//    log.Printf("Exec Stmt 1: '%s'", query)
 
     rows, err := ss.db.Raw(query).Rows()
     defer rows.Close()
@@ -214,7 +214,7 @@ func (ss *StopService) FetchStopById(agencyKey, date, timeOfDay, stopId string, 
 
     schema := fmt.Sprintf("gtfs_%s", agencyKey)
     query := fmt.Sprintf(ss.selectStopById, schema, stopId)
-    log.Printf("Exec Stmt: '%s'", query)
+//    log.Printf("Exec Stmt: '%s'", query)
 
     rows, err := ss.db.Raw(query).Rows()
     defer rows.Close()

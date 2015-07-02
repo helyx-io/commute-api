@@ -47,7 +47,7 @@ func Rows(db *gorm.DB, connectInfos *config.DBConnectInfos, filename string, par
     dml, err := data.Asset(filePath)
     utils.FailOnError(err, fmt.Sprintf("Could get dml resource at path '%s' for exec", filePath))
     execStmt := fmt.Sprintf(string(dml), params...)
-    log.Printf("Exec Stmt: '%s' - Params: %v", execStmt, params)
+//    log.Printf("Exec Stmt: '%s' - Params: %v", execStmt, params)
 
     return db.Raw(execStmt).Rows()
 }
